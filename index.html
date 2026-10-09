@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Owner Pulse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: app shell. Concept strip, header with property switcher, tab bar, one working view at a time. Visual language follows triadvacationrentals.com */
+:root{
+  --bg:#E0F4FD; --surface:#FFFFFF; --tint:#CDEBFA; --ink:#0F2C3A; --ink2:#4A6472; --muted:#7A8F9A;
+  --line:#CBE2EE; --accent:#16A8EE; --accent-ink:#0B7DB5; --navy:#0F2C3A; --on-navy:#FFFFFF;
+  --good:#1E8457; --good-bg:#E4F4EC; --warn:#A86B12; --warn-bg:#FBF0DC; --crit:#B9402B; --crit-bg:#FBE7E3;
+  --mkt:#9AAAB3; --booked:#0F2C3A; --booked-ink:#FFFFFF;
+  --font:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --r:16px; --r-sm:10px; color-scheme:light;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+:root[data-theme="dark"]{
+  --bg:#0A1A22; --surface:#10252F; --tint:#123747; --ink:#E6F1F6; --ink2:#A7BDC8; --muted:#7D96A2;
+  --line:#21404D; --accent:#3DB8F2; --accent-ink:#6CCBF7; --navy:#3DB8F2; --on-navy:#06202C;
+  --good:#4CC28E; --good-bg:#123326; --warn:#E3AA52; --warn-bg:#3A2C12; --crit:#EF8270; --crit-bg:#3D1C17;
+  --mkt:#6F8793; --booked:#2A5568; --booked-ink:#E6F1F6; color-scheme:dark }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.num{font-variant-numeric:tabular-nums}
+h1,h2,h3{margin:0;text-wrap:balance;font-weight:600;letter-spacing:-.01em}
+p{margin:0}
+button{font-family:inherit;font-size:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.strip{background:var(--navy);color:var(--on-navy);font-size:12.5px;padding:8px 16px;text-align:center}
+.strip b{font-weight:700}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px}
+header.top{padding-block:22px 6px}
+.top-row{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+.brand{min-width:0;display:flex;align-items:center;gap:12px}
+.mark{color:var(--ink);display:flex;align-items:center;padding-right:14px;border-right:1px solid var(--line)}
+.brand h1{font-size:22px}
+.brand small{display:block;color:var(--muted);font-size:12.5px;font-weight:500}
+.tools{display:flex;gap:10px;align-items:center;min-width:0;max-width:100%}
+.theme{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);display:grid;place-items:center;cursor:pointer}
+.theme svg{width:18px;height:18px}
+.switch{min-width:0;max-width:100%;display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 8px 6px 16px}
+.switch label{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.switch select{min-width:0;flex:1;border:0;background:var(--tint);color:var(--ink);font-family:inherit;font-weight:600;font-size:14px;padding:8px 12px;border-radius:999px;max-width:62vw}
+
+nav.tabs{display:flex;gap:4px;overflow-x:auto;margin-top:18px;border-bottom:1px solid var(--line);scrollbar-width:none}
+nav.tabs button{background:none;border:0;padding:12px 14px;font-weight:600;color:var(--ink2);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-color:var(--accent)}
+nav.tabs .dot{display:inline-block;min-width:18px;padding:0 5px;height:18px;border-radius:9px;background:var(--warn-bg);color:var(--warn);font-size:11px;line-height:18px;text-align:center;margin-left:6px;font-weight:700}
+
+main{padding-block:24px 56px}
+.view{display:grid;gap:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.card-h{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+.card-h h2{font-size:17px}
+.sub{color:var(--ink2);font-size:13.5px}
+.eyebrow{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 18px 16px;display:grid;gap:4px}
+.kpi .v{font-size:28px;font-weight:700;letter-spacing:-.02em}
+.kpi .cmp{font-size:12.5px;color:var(--ink2)}
+.kpi.lead{background:var(--tint);border-color:transparent}
+.delta{font-weight:700}
+.up{color:var(--good)} .down{color:var(--crit)} .flat{color:var(--muted)}
+.note{font-size:12.5px;color:var(--ink2);background:var(--tint);border-radius:var(--r-sm);padding:10px 12px}
+
+.grid2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px}
+.chart-wrap{position:relative}
+.chart-wrap svg{display:block;width:100%;height:auto;overflow:visible}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2)}
+.legend i{display:inline-block;width:18px;height:0;border-top:2px solid var(--accent);vertical-align:middle;margin-right:6px}
+.legend i.m{border-top:2px dashed var(--mkt)}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);box-shadow:0 6px 20px rgba(15,44,58,.12);border-radius:10px;padding:8px 10px;font-size:12.5px;min-width:150px;transform:translate(-50%,-110%);white-space:nowrap}
+.tip b{display:block;margin-bottom:2px}
+.tip .r{display:flex;justify-content:space-between;gap:12px}
+
+.feed{display:grid;gap:0}
+.feed .it{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.feed .it:first-child{border-top:0;padding-top:0}
+.feed .t{font-weight:600;font-size:14px}
+.feed .w{font-size:13px;color:var(--ink2)}
+
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.p-applied{background:var(--good-bg);color:var(--good)}
+.p-adjusted{background:var(--tint);color:var(--accent-ink)}
+.p-rejected{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+.p-await{background:var(--warn-bg);color:var(--warn)}
+
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.cal .dow{font-size:11px;color:var(--muted);font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:.06em}
+.day{border:1px solid var(--line);border-radius:10px;padding:6px 7px;min-height:58px;display:flex;flex-direction:column;justify-content:space-between;font-size:12px;background:var(--surface)}
+.day .d{color:var(--muted);font-weight:600}
+.day .p{font-weight:700;font-size:13px}
+.day.b{background:var(--booked);border-color:var(--booked);color:var(--booked-ink)}
+.day.b .d{color:var(--booked-ink);opacity:.7}
+.day.att{border-color:var(--warn);box-shadow:inset 0 0 0 1px var(--warn)}
+.day.pad{visibility:hidden}
+.cal-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:var(--ink2)}
+.sw{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-1px;margin-right:6px;border:1px solid var(--line)}
+
+.log{display:grid;gap:12px}
+.dec{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;display:grid;gap:12px}
+.dec-h{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+.dec-h h3{font-size:15.5px}
+.dec .meta{font-size:12.5px;color:var(--muted)}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.step{background:var(--bg);border-radius:var(--r-sm);padding:10px 12px;display:grid;gap:2px}
+.step .eyebrow{font-size:10.5px}
+.step .val{font-weight:700;font-size:15px}
+.step .why{font-size:12.5px;color:var(--ink2)}
+.reason{font-size:13.5px;color:var(--ink2);border-left:2px solid var(--line);padding-left:12px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:0;border-radius:12px;padding:10px 16px;font-weight:600;cursor:pointer}
+.btn-p{background:var(--navy);color:var(--on-navy)}
+.btn-s{background:var(--surface);border:1px solid var(--line);color:var(--ink)}
+.filters{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px;font-weight:600;font-size:13px;cursor:pointer;color:var(--ink2)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+td.r,th.r{text-align:right}
+tr.tot td{font-weight:700;border-bottom:0;font-size:15px}
+.tscroll{overflow-x:auto}
+.bar{height:10px;border-radius:5px;background:var(--line);overflow:hidden;display:flex;gap:2px}
+.bar span{display:block;height:100%;background:var(--accent)}
+
+.sim{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:20px}
+.field{display:grid;gap:6px;margin-bottom:16px}
+.field label{font-weight:600;font-size:13.5px;display:flex;justify-content:space-between;gap:10px}
+.field output{color:var(--accent-ink);font-weight:700}
+.field .hint{font-size:12px;color:var(--muted)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+input[type=number]{width:100%;font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.scen{display:grid;gap:10px}
+.sc{border:1px solid var(--line);border-radius:var(--r-sm);padding:14px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center}
+.sc h3{font-size:14.5px}
+.sc .big{font-size:22px;font-weight:700;text-align:right}
+.sc p{font-size:12.5px;color:var(--ink2);grid-column:1/-1}
+.sc.best{border-color:var(--accent);background:var(--tint)}
+
+.notes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.notes .card p,.notes .card li{font-size:14px;color:var(--ink2);max-width:65ch}
+.notes ul,.notes ol{margin:8px 0 0;padding-left:18px;display:grid;gap:6px}
+.notes .card h2{margin-bottom:8px}
+.notes .wide{grid-column:1/-1}
+.road{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:10px}
+.road div{background:var(--bg);border-radius:var(--r-sm);padding:12px 14px}
+.road h3{font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--accent-ink);margin-bottom:6px}
+.road ul{margin:0}
+footer{color:var(--muted);font-size:12.5px;padding-block:0 40px;text-align:center}
+footer a{color:var(--accent-ink)}
+
+@media (max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2,.sim,.notes{grid-template-columns:1fr}.road{grid-template-columns:1fr}}
+@media (max-width:560px){.tools{width:100%}.switch{flex:1}.switch label{display:none}.switch select{max-width:none}.wrap{padding-inline:16px}.steps{grid-template-columns:1fr}.kpi .v{font-size:24px}.day{min-height:50px;padding:4px 5px}.day .p{font-size:11.5px}.card{padding:16px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="strip">Concept prototype by <b>Erick Braga</b> for the Triad Vacation Rentals Product Manager role. Not a Triad product. All properties and numbers are fictional.</div>
+
+<div class="wrap">
+  <header class="top">
+    <div class="top-row">
+      <div class="brand">
+        <div class="mark"><svg width="46" height="31" viewBox="0 0 52 35" fill="currentColor" role="img" aria-label="Triad Vacation Rentals logo"><path d="M34.6861 25.439C34.6392 24.3328 34.7869 21.2976 34.7869 21.2976C33.3689 21.8742 31.6369 21.996 31.6369 21.996C32.0587 23.6132 32.6939 27.1734 32.3095 28.2492C31.1704 29.3484 29.579 29.7422 29.0095 29.7023C28.44 29.6625 28.3814 30.4101 28.3814 30.4101L26.7501 29.9179C26.7501 29.9179 25.7282 31.5281 26.279 32.7469C28.2033 31.9219 29.0283 31.4906 29.8134 31.4906C30.5986 31.4906 31.7376 29.6437 32.7197 29.4867C34.7236 29.0554 34.7634 27.3258 34.6837 25.4414L34.6861 25.439Z"/><path d="M6.32664 16.2749C7.80789 15.3397 9.28914 13.4952 11.0704 12.7967C11.7243 11.8077 12.5282 11.1655 13.2478 10.753C12.1368 10.228 10.2993 9.71234 8.16883 10.528C5.73366 11.4725 3.10397 14.2756 0.0453684 11.3295C-0.242914 13.5514 0.868031 14.8522 2.65632 15.0631C1.00631 15.6092 0.23052 15.1264 0.23052 15.1264C0.23052 15.1264 2.64928 18.5694 6.32664 16.2772V16.2749Z"/><path d="M45.9502 2.81515L46.0416 0.944824C46.0416 0.944824 44.394 1.85655 43.4799 2.36046C43.1283 2.55499 42.7486 2.6839 42.3525 2.74484C36.2119 3.70109 34.0486 8.85501 29.9705 10.5777C29.7267 10.6808 29.4806 10.7745 29.2298 10.8542C29.2228 10.8566 29.2158 10.8589 29.2064 10.8613C27.908 11.2738 26.5134 11.3863 25.1306 11.1613C22.0978 10.6667 18.8142 9.86986 16.0439 10.2449C12.9735 11.0675 11.8298 12.8464 11.4407 13.7113C10.747 15.4152 10.7962 17.3277 11.2345 18.4457C12.0735 20.5926 11.0774 22.0082 6.8868 23.0019C6.8868 25.5683 5.97742 28.1957 5.74305 28.7301C5.23679 29.8785 4.34616 29.6629 4.54772 30.9684C4.3485 31.8824 2.77819 31.3481 2.77819 31.3481C2.77819 31.3481 2.18287 32.6301 2.98209 34.0551C3.8985 33.6356 5.46883 31.8543 6.0993 31.3317C6.72977 30.809 7.5407 27.2863 8.28602 26.3816C9.6618 24.6144 13.1962 23.0816 16.4962 21.6941C17.7009 23.8949 15.9454 26.7754 16.4962 27.1152C19.0626 28.2144 21.4978 31.0691 21.629 31.6973C21.7603 32.3254 22.597 31.9598 22.8853 32.1684C23.1736 32.377 22.7283 33.5817 22.7283 33.5817H25.5829C25.4259 32.534 23.8556 31.409 23.5392 30.7785C23.2251 30.1504 20.9212 28.552 20.2392 27.6613C19.6509 26.8902 19.3368 26.098 20.1946 21.8629C20.2814 21.4386 20.3798 20.9793 20.49 20.4824C20.6704 19.4746 20.8533 18.0589 20.7853 16.7324C21.5001 18.4082 21.4204 20.2105 21.4204 20.2105C26.5884 22.1019 33.0103 21.3988 35.8556 20.2621C36.9291 20.7332 40.7142 25.4957 41.7736 27.1246C43.0885 27.8113 44.4244 30.3262 44.4244 31.1324C44.4244 31.9387 45.5049 31.7207 45.8377 32.0957C46.1705 32.4684 45.8377 33.5817 45.8377 33.5817H48.7041C48.7041 33.5817 48.076 32.5082 47.4736 31.9574C46.8713 31.4066 46.4775 30.9356 46.0346 30.1504C45.5893 29.3652 44.3588 28.5262 44.1479 27.5324C43.9393 26.5363 43.3369 25.5941 42.4979 24.5465C41.6588 23.4988 41.2932 22.3199 39.8799 19.6504C40.515 18.9613 40.583 17.6652 40.4846 16.5121C40.2432 13.6878 41.1361 10.866 43.0182 8.74485C43.3439 8.37688 43.6604 8.0722 43.9486 7.84954C43.9486 7.84954 44.326 9.75033 46.9229 9.35189C48.6174 9.09173 50.4666 11.405 50.4666 11.405C50.4666 11.405 52.2127 10.6691 51.9784 8.97454L45.9479 2.8128L45.9502 2.81515Z"/><path d="M34.3018 6.60951C38.7338 1.64543 42.7768 2.31574 42.7768 2.31574C41.3495 1.02668 36.3221 0.236829 32.9869 5.31106C31.7916 7.12982 29.9893 10.022 29.9893 10.022C31.0791 9.42905 33.0666 7.98998 34.2994 6.60951H34.3018Z"/></svg></div>
+        <div><h1>Owner Pulse</h1><small>See what we changed, why, and what it earned you</small></div>
+      </div>
+      <div class="tools">
+      <button class="theme" id="themeBtn" type="button" aria-label="Switch to dark mode"></button>
+      <div class="switch">
+        <label for="prop">Property</label>
+        <select id="prop"></select>
+      </div>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" data-v="overview" aria-selected="true">Overview</button>
+      <button role="tab" data-v="pricing" aria-selected="false">Pricing decisions <span class="dot" id="awaitCount">1</span></button>
+      <button role="tab" data-v="payouts" aria-selected="false">Payouts &amp; fees</button>
+      <button role="tab" data-v="vrbo" aria-selected="false">Vrbo 12% simulator</button>
+      <button role="tab" data-v="notes" aria-selected="false">PM notes</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- OVERVIEW -->
+    <section class="view" id="v-overview">
+      <div class="kpis" id="kpis"></div>
+      <p class="note" id="occNote"></p>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-h"><h2>Net owner revenue, last 12 months</h2>
+            <div class="legend"><span><i></i>This property</span><span><i class="m"></i>Comp-set median</span></div></div>
+          <div class="chart-wrap" id="chart"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><h2>Latest decisions</h2><button class="chip" data-goto="pricing">Open log</button></div>
+          <div class="feed" id="feed"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h2>Next 30 days</h2><span class="sub num" id="pace"></span></div>
+        <div class="cal" id="cal"></div>
+        <div class="cal-legend">
+          <span><span class="sw" style="background:var(--booked);border-color:var(--booked)"></span>Booked (nightly rate)</span>
+          <span><span class="sw"></span>Open (current price)</span>
+          <span><span class="sw" style="border-color:var(--warn);box-shadow:inset 0 0 0 1px var(--warn)"></span>Open within 7 days, analyst watching</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRICING -->
+    <section class="view" id="v-pricing" hidden>
+      <div class="card">
+        <div class="card-h"><div><h2>Every price change, with the reason</h2>
+          <p class="sub">The model suggests. A revenue analyst reviews. You see both, plus why the final call was made.</p></div></div>
+        <div class="filters" role="group" aria-label="Filter decisions">
+          <button class="chip" data-f="all" aria-pressed="true">All</button>
+          <button class="chip" data-f="await" aria-pressed="false">Needs your OK</button>
+          <button class="chip" data-f="adjusted" aria-pressed="false">Analyst adjusted</button>
+          <button class="chip" data-f="rejected" aria-pressed="false">Analyst rejected</button>
+        </div>
+      </div>
+      <div class="log" id="log"></div>
+    </section>
+
+    <!-- PAYOUTS -->
+    <section class="view" id="v-payouts" hidden>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-h"><h2>September statement</h2><span class="sub">Sample statement, fictional figures</span></div>
+          <div class="tscroll"><table id="stmt"></table></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><h2>Where your money is</h2></div>
+          <div id="mix"></div>
+          <div class="tscroll" style="margin-top:18px"><table>
+            <thead><tr><th>Channel</th><th>Payout timing</th><th>Occupancy tax</th></tr></thead>
+            <tbody>
+              <tr><td>Airbnb</td><td>Instant, per booking (about 80% of bookings)</td><td><span class="pill p-applied">Remitted by platform</span></td></tr>
+              <tr><td>Vrbo</td><td>Monthly, next run Nov 10</td><td><span class="pill p-await">Estimate held by you</span></td></tr>
+              <tr><td>Booking.com</td><td>Monthly, next run Nov 10</td><td><span class="pill p-await">Estimate held by you</span></td></tr>
+            </tbody></table></div>
+          <p class="note" style="margin-top:14px">Non-Airbnb tax is shown as an estimate you can hold, pay yourself, or hand to a tax partner. Cleaning is paid directly to your cleaner, so it is not on this statement.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- VRBO -->
+    <section class="view" id="v-vrbo" hidden>
+      <div class="card">
+        <div class="card-h"><div><h2>Vrbo moves hosts to a 12% commission on October 29</h2>
+          <p class="sub">What it costs this property per year, and three ways to respond. Every input is an assumption you can change.</p></div></div>
+        <div class="sim">
+          <div>
+            <div class="field"><label for="g">Annual gross booking revenue <output id="go"></output></label>
+              <input type="range" id="g" min="10000" max="200000" step="1000"></div>
+            <div class="field"><label for="s">Share booked on Vrbo <output id="so"></output></label>
+              <input type="range" id="s" min="0" max="60" step="1"></div>
+            <div class="field"><label for="old">Current Vrbo host cost <output id="oldo"></output></label>
+              <input type="range" id="old" min="3" max="12" step="0.5"><span class="hint">Assumption. Commission plus payment processing under the current pay-per-booking plan.</span></div>
+            <div class="field"><label for="r">Vrbo-only rate increase <output id="ro"></output></label>
+              <input type="range" id="r" min="0" max="10" step="0.5"></div>
+            <div class="field"><label for="l">Vrbo bookings lost from that increase <output id="lo"></output></label>
+              <input type="range" id="l" min="0" max="20" step="0.5"><span class="hint">Assumption. Validate against the last rate test in this market.</span></div>
+            <div class="field"><label for="m">Management fee <output id="mo"></output></label>
+              <input type="range" id="m" min="10" max="15" step="0.5"></div>
+          </div>
+          <div>
+            <p class="eyebrow" style="margin-bottom:10px">Change in your net per year vs. today</p>
+            <div class="scen" id="scen"></div>
+            <p class="note" style="margin-top:14px">Rate parity rules differ by channel. The analyst confirms the rate change is allowed before it goes live, and you approve it in Pricing decisions.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NOTES -->
+    <section class="view" id="v-notes" hidden>
+      <div class="notes">
+        <div class="card wide">
+          <p class="eyebrow">Why this exists</p>
+          <h2 style="font-size:22px;margin:6px 0 10px">Triad sells transparency and data-led pricing. The owner should be able to see both without calling anyone.</h2>
+          <p>The site makes three promises: one simple fee, revenue over inflated occupancy, and pricing that is data-led with human review. Today the proof reaches owners through periodic reports and their account manager. When a month looks weak, the fastest way to learn why is a phone call. Owner Pulse makes the pricing work visible, so trust is built by the product instead of by support hours.</p>
+        </div>
+        <div class="card">
+          <h2>Hypotheses to test</h2>
+          <ul>
+            <li>Owners who see the reason behind a price drop are less likely to churn after a slow month.</li>
+            <li>A visible decision log cuts "why is my rate lower?" contacts to Owner Support.</li>
+            <li>Showing RevPAR next to the comp set ends the occupancy argument faster than any explanation on a call.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h2>How I'd measure it</h2>
+          <ul>
+            <li><b>North star:</b> 12-month owner retention.</li>
+            <li>Owner Support contacts per property per month, tagged by theme.</li>
+            <li>Weekly active owners in the portal.</li>
+            <li>Median time for an owner to approve a change that needs their OK.</li>
+            <li>Guardrail: analyst minutes per decision. The log can't become a writing job.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h2>What I'd validate first</h2>
+          <ol>
+            <li>Read the last 90 days of owner tickets and tag the top five themes.</li>
+            <li>Shadow three account-manager performance reviews.</li>
+            <li>Interview six owners: single property, small portfolio, and an owner who left.</li>
+            <li>Check what the PMS and pricing tool already expose before building any data pipeline.</li>
+          </ol>
+        </div>
+        <div class="card">
+          <h2>Risks and how the design handles them</h2>
+          <ul>
+            <li><b>Owners micromanage prices.</b> They see suggestion, review and reason, but only approve changes that touch their terms, such as channel rates or minimum stays.</li>
+            <li><b>Analysts spend hours writing reasons.</b> An AI draft from the model's own signals, which the analyst edits in one line.</li>
+            <li><b>Stale channel data erodes trust.</b> Show data freshness on every number.</li>
+          </ul>
+        </div>
+        <div class="card wide">
+          <h2>How this was built</h2>
+          <p>Designed and coded in one session with Claude, starting from Triad's public site: the management-services page, the fee model, payout and tax rules, and the October 5 post on Vrbo's commission change. The visual language follows triadvacationrentals.com. Next step in a real cycle would be a Figma pass on the decision card with three owners before writing production code.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer>Owner Pulse is a concept by Erick Braga · <a href="https://www.linkedin.com/in/erick-braga" target="_blank" rel="noopener">linkedin.com/in/erick-braga</a></footer>
+</div>
+
+<script>
+const PROPS=[
+ {id:"cabin",name:"Ridgeline Cabin · Sevierville, TN",short:"Ridgeline Cabin",k:1,adr:289,occ:.61,madr:262,mocc:.64,channel:{air:.62,vrbo:.27,bdc:.11}},
+ {id:"coast",name:"Dune House · North Topsail Beach, NC",short:"Dune House",k:1.32,adr:376,occ:.55,madr:349,mocc:.57,channel:{air:.55,vrbo:.36,bdc:.09}},
+ {id:"loft",name:"Mill Street Loft · Greensboro, NC",short:"Mill Street Loft",k:.58,adr:164,occ:.72,madr:158,mocc:.69,channel:{air:.74,vrbo:.12,bdc:.14}}
+];
+const MONTHS=["Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep"];
+const YRS=["2025","2025","2025","2026","2026","2026","2026","2026","2026","2026","2026","2026"];
+const BASE=[4620,3480,4910,2310,2580,3640,3920,4180,6120,6740,5460,4250];
+const MKT =[4080,3210,4520,2420,2390,3310,3560,3700,5540,6020,5180,3880];
+const $=s=>document.querySelector(s);
+const fmt=n=>"$"+Math.round(n).toLocaleString("en-US");
+const pct=n=>(n*100).toFixed(0)+"%";
+let P=PROPS[0];
+let approvals={};
+
+function kpis(){
+  const rp=P.adr*P.occ, mrp=P.madr*P.mocc;
+  const gross=30*P.occ*P.adr, net=gross*0.95*0.88;
+  const d=(a,b,inv)=>{const x=(a-b)/b;const c=Math.abs(x)<.005?"flat":(x>0?"up":"down");return `<span class="delta ${c}">${x>0?"+":""}${(x*100).toFixed(1)}%</span>`};
+  $("#kpis").innerHTML=`
+   <div class="kpi lead"><span class="eyebrow">Net to you · last 30 days</span><span class="v num">${fmt(net)}</span><span class="cmp">After channel and management fees</span></div>
+   <div class="kpi"><span class="eyebrow">RevPAR</span><span class="v num">${fmt(rp)}</span><span class="cmp num">${d(rp,mrp)} vs comp set ${fmt(mrp)}</span></div>
+   <div class="kpi"><span class="eyebrow">Avg. daily rate</span><span class="v num">${fmt(P.adr)}</span><span class="cmp num">${d(P.adr,P.madr)} vs comp set ${fmt(P.madr)}</span></div>
+   <div class="kpi"><span class="eyebrow">Occupancy</span><span class="v num">${pct(P.occ)}</span><span class="cmp num">${d(P.occ,P.mocc)} vs comp set ${pct(P.mocc)}</span></div>`;
+  $("#occNote").innerHTML = P.occ<P.mocc
+   ? `<b>Fewer nights, more money.</b> Occupancy sits below the comp set on purpose. Each booked night earns more, so revenue per available night is ${d(rp,mrp)} ahead. Filling the calendar at lower rates would add guest wear for less income.`
+   : `<b>Rate and occupancy both ahead.</b> Demand here supports more nights and a higher rate. The analyst is testing small weekday increases before the holidays.`;
+}
+
+function chart(){
+  const W=640,H=260,L=48,R=12,T=14,B=30;
+  const s=BASE.map(v=>v*P.k*0.95*0.88), m=MKT.map(v=>v*P.k*0.95*0.88);
+  const max=Math.ceil(Math.max(...s,...m)/1000)*1000;
+  const x=i=>L+i*(W-L-R)/11, y=v=>T+(H-T-B)*(1-v/max);
+  const ticks=[0,max/4,max/2,max*3/4,max];
+  const line=a=>a.map((v,i)=>(i?"L":"M")+x(i).toFixed(1)+","+y(v).toFixed(1)).join("");
+  const area=line(s)+`L${x(11)},${y(0)}L${x(0)},${y(0)}Z`;
+  let g=ticks.map(t=>`<line x1="${L}" x2="${W-R}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)" stroke-width="1"/><text x="${L-8}" y="${y(t)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${t?("$"+(t/1000).toFixed(t%1000?1:0)+"k"):"$0"}</text>`).join("");
+  g+=MONTHS.map((mo,i)=>(i%2===0||i===11)?`<text x="${x(i)}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--muted)">${mo}${i===0||mo==="Jan"?" ’"+YRS[i].slice(2):""}</text>`:"").join("");
+  const svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Monthly net owner revenue for ${P.short} versus comp-set median, October 2025 to September 2026">
+   <defs><linearGradient id="fa" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".22"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+   ${g}
+   <path d="${area}" fill="url(#fa)"/>
+   <path d="${line(m)}" fill="none" stroke="var(--mkt)" stroke-width="2" stroke-dasharray="5 4"/>
+   <path d="${line(s)}" fill="none" stroke="var(--accent)" stroke-width="2.25" stroke-linejoin="round"/>
+   <circle cx="${x(11)}" cy="${y(s[11])}" r="4.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>
+   <line id="xh" x1="0" x2="0" y1="${T}" y2="${H-B}" stroke="var(--ink2)" stroke-width="1" opacity="0"/>
+   <circle id="hp" r="5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" opacity="0"/>
+   <rect id="hit" x="${L}" y="${T}" width="${W-L-R}" height="${H-T-B}" fill="transparent"/>
+  </svg><div class="tip" id="tip" hidden></div>`;
+  const el=$("#chart"); el.innerHTML=svg;
+  const sv=el.querySelector("svg"), tip=$("#tip"), xh=sv.querySelector("#xh"), hp=sv.querySelector("#hp");
+  const move=e=>{
+    const r=sv.getBoundingClientRect(); const px=(e.clientX-r.left)*W/r.width;
+    const i=Math.max(0,Math.min(11,Math.round((px-L)/((W-L-R)/11))));
+    xh.setAttribute("x1",x(i));xh.setAttribute("x2",x(i));xh.setAttribute("opacity",".35");
+    hp.setAttribute("cx",x(i));hp.setAttribute("cy",y(s[i]));hp.setAttribute("opacity","1");
+    const diff=(s[i]-m[i])/m[i];
+    tip.innerHTML=`<b>${MONTHS[i]} ${YRS[i]}</b><div class="r"><span>This property</span><span class="num">${fmt(s[i])}</span></div><div class="r"><span>Comp-set median</span><span class="num">${fmt(m[i])}</span></div><div class="r"><span>Difference</span><span class="num delta ${diff>=0?"up":"down"}">${diff>=0?"+":""}${(diff*100).toFixed(0)}%</span></div>`;
+    tip.hidden=false; tip.style.left=(x(i)*r.width/W)+"px"; tip.style.top=(Math.min(y(s[i]),y(m[i]))*r.height/H)+"px";
+  };
+  const out=()=>{tip.hidden=true;xh.setAttribute("opacity","0");hp.setAttribute("opacity","0")};
+  sv.addEventListener("pointermove",move); sv.addEventListener("pointerleave",out);
+}
+
+function decisions(){
+  const a=v=>fmt(v*P.adr/289);
+  return [
+   {id:"vrbo",st:"await",date:"Oct 5",title:"Vrbo-only rate +5% from Oct 29",meta:"Applies to Vrbo listing only. Airbnb and Booking.com unchanged.",
+    model:["No suggestion","Channel fee changes are outside the pricing model"],analyst:["+5% on Vrbo","Proposed by revenue analyst"],final:["Waiting for you","Changes your channel terms"],
+    reason:"Vrbo's host commission rises to 12% on October 29. A 5% Vrbo-only increase recovers about two-thirds of the extra cost, assuming roughly 2% fewer Vrbo bookings. See the Vrbo 12% simulator for the math."},
+   {id:"d1",st:"adjusted",date:"Oct 8",title:"Oct 16–18 weekend",meta:"Fall foliage peak · 9 days out",
+    model:["+18% · "+a(389),"Comp set 82% booked for these dates"],analyst:["+14% · "+a(375),"Capped below +15%"],final:["Applied "+a(375),"Live on all channels"],
+    reason:"Demand supports the increase, but two of the closest comps sit at $360–370 with stronger review scores. Pricing just under them keeps this listing on the first search page."},
+   {id:"d2",st:"adjusted",date:"Oct 7",title:"Oct 13–15 midweek",meta:"Open within 7 days",
+    model:["−12% · "+a(219),"Slow pickup for these nights"],analyst:["−8% · "+a(229),"Kept above your rate floor"],final:["Applied "+a(229),"Re-checked daily until arrival"],
+    reason:"Two open midweek nights close to arrival. A smaller cut than the model wanted protects your minimum rate. If nothing books by Saturday, the analyst will open 1-night stays instead of cutting price further."},
+   {id:"d3",st:"applied",date:"Oct 3",title:"Thanksgiving, Nov 26–29",meta:"Minimum stay 2 → 3 nights",
+    model:["3-night minimum","Holiday demand pattern"],analyst:["Approved as suggested",""],final:["Applied","All channels"],
+    reason:"Last year this week sold out 3 weeks early in 2-night blocks, which left two unsellable single nights. A 3-night minimum avoids those gaps."},
+   {id:"d4",st:"rejected",date:"Sep 30",title:"Halloween weekend, Oct 30–Nov 1",meta:"Already 2 of 3 nights booked",
+    model:["+9% · "+a(332),"Event demand detected"],analyst:["Rejected","Price kept at "+a(305)],final:["No change",""],
+    reason:"The event demand was already priced in when the weekend was set. Comps have not moved, and raising the last open night risks leaving it empty between two booked nights."}
+  ];
+}
+const ST={applied:["p-applied","Applied as suggested"],adjusted:["p-adjusted","Analyst adjusted"],rejected:["p-rejected","Analyst rejected"],await:["p-await","Needs your OK"],ok:["p-applied","You approved"],no:["p-rejected","You declined"]};
+let filter="all";
+function renderLog(){
+  const list=decisions().filter(d=>filter==="all"||(filter==="await"?d.st==="await"&&!approvals[d.id]:d.st===filter));
+  $("#log").innerHTML=list.map(d=>{
+    const st=approvals[d.id]||d.st; const [cls,lab]=ST[st];
+    const act=d.st==="await"&&!approvals[d.id]?`<div class="actions"><button class="btn btn-p" data-ok="${d.id}">Approve +5% on Vrbo</button><button class="btn btn-s" data-no="${d.id}">Keep current rates</button></div>`:"";
+    const step=(t,v)=>`<div class="step"><span class="eyebrow">${t}</span><span class="val num">${v[0]}</span>${v[1]?`<span class="why">${v[1]}</span>`:""}</div>`;
+    return `<article class="dec"><div class="dec-h"><div><h3>${d.title}</h3><span class="meta">${d.date} · ${d.meta}</span></div><span class="pill ${cls}">${lab}</span></div>
+    <div class="steps">${step("Model suggested",d.model)}${step("Analyst review",d.analyst)}${step("Result",approvals[d.id]==="ok"?["Scheduled for Oct 29","Vrbo only"]:approvals[d.id]==="no"?["No change","You kept current rates"]:d.final)}</div>
+    <p class="reason">${d.reason}</p>${act}</article>`}).join("")||`<p class="sub">Nothing here. You're up to date.</p>`;
+  const pending=decisions().filter(d=>d.st==="await"&&!approvals[d.id]).length;
+  const dot=$("#awaitCount"); dot.textContent=pending; dot.hidden=!pending;
+}
+function feed(){
+  $("#feed").innerHTML=decisions().slice(0,4).map(d=>{const [cls,lab]=ST[approvals[d.id]||d.st];
+    return `<div class="it"><span class="pill ${cls}" style="align-self:start">${lab}</span><div><div class="t">${d.title}</div><div class="w">${d.date} · ${d.meta}</div></div></div>`}).join("");
+}
+
+function cal(){
+  const start=new Date(2026,9,9); const seed=P.id.length;
+  const booked=new Set([0,1,2,3,7,8,9,14,15,16,21,22,23,24,28,29].map(n=>(n+seed)%30));
+  booked.delete(4);booked.delete(5);booked.delete(6);
+  let html=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d=>`<div class="dow">${d}</div>`).join("");
+  for(let i=0;i<start.getDay();i++) html+=`<div class="day pad"></div>`;
+  let bookedRev=0,bn=0;
+  for(let i=0;i<30;i++){
+    const dt=new Date(start); dt.setDate(start.getDate()+i);
+    const wk=dt.getDay()===5||dt.getDay()===6;
+    const price=Math.round(P.adr*(wk?1.18:.9)*(dt.getMonth()===9?1.06:.95));
+    const b=booked.has(i), att=!b&&i<7;
+    if(b){bookedRev+=price;bn++}
+    html+=`<div class="day ${b?"b":""} ${att?"att":""}" title="${dt.toDateString()}: ${b?"booked":"open"} at $${price}"><span class="d">${dt.getDate()===1||i===0?dt.toLocaleString("en-US",{month:"short"})+" ":""}${dt.getDate()}</span><span class="p num">$${price}</span></div>`;
+  }
+  $("#cal").innerHTML=html;
+  $("#pace").textContent=`${bn} of 30 nights booked · ${fmt(bookedRev)} on the books · +11% vs same date last year`;
+}
+
+function payouts(){
+  const g=30*P.occ*P.adr; const c=P.channel;
+  const rows=[["Airbnb",g*c.air,.03],["Vrbo",g*c.vrbo,.08],["Booking.com",g*c.bdc,.15]];
+  let gross=0,fees=0;
+  let body=rows.map(([n,v,f])=>{gross+=v;fees+=v*f;return `<tr><td>${n}</td><td class="r num">${fmt(v)}</td><td class="r num">−${fmt(v*f)}</td></tr>`}).join("");
+  const mg=(gross-fees)*.12, tax=(rows[1][1]+rows[2][1])*.12;
+  $("#stmt").innerHTML=`<thead><tr><th>Channel</th><th class="r">Booking revenue</th><th class="r">Channel fee</th></tr></thead><tbody>${body}
+   <tr><td>Subtotal</td><td class="r num">${fmt(gross)}</td><td class="r num">−${fmt(fees)}</td></tr>
+   <tr><td colspan="2">Triad management fee (12% sample)</td><td class="r num">−${fmt(mg)}</td></tr>
+   <tr class="tot"><td colspan="2">Net to you</td><td class="r num">${fmt(gross-fees-mg)}</td></tr>
+   <tr><td colspan="2" class="sub">Estimated occupancy tax to set aside on Vrbo and Booking.com (12% sample rate)</td><td class="r num sub">${fmt(tax)}</td></tr></tbody>`;
+  $("#mix").innerHTML=`<p class="eyebrow" style="margin-bottom:8px">Booking revenue by channel</p>`+
+   [["Airbnb",c.air],["Vrbo",c.vrbo],["Booking.com",c.bdc]].map(([n,v])=>`<div style="display:grid;grid-template-columns:96px minmax(0,1fr) 44px;gap:10px;align-items:center;margin-bottom:8px;font-size:13.5px"><span>${n}</span><div class="bar"><span style="width:${v*100}%"></span></div><span class="num" style="text-align:right">${pct(v)}</span></div>`).join("");
+}
+
+const S={g:0,s:0,old:8,r:5,l:2,m:12};
+function simInit(){
+  S.g=Math.round(BASE.reduce((a,b)=>a+b,0)*P.k/1000)*1000; S.s=Math.round(P.channel.vrbo*100);
+  ["g","s","old","r","l","m"].forEach(k=>{$("#"+k).value=S[k]});
+  sim();
+}
+function sim(){
+  ["g","s","old","r","l","m"].forEach(k=>S[k]=+$("#"+k).value);
+  $("#go").textContent=fmt(S.g);$("#so").textContent=S.s+"%";$("#oldo").textContent=S.old+"%";$("#ro").textContent="+"+S.r+"%";$("#lo").textContent=S.l+"%";$("#mo").textContent=S.m+"%";
+  const mg=1-S.m/100, V=S.g*S.s/100, other=S.g-V;
+  const base=V*(1-S.old/100);
+  const nothing=(V*(1-.12)-base)*mg;
+  const Vr=V*(1+S.r/100)*(1-S.l/100);
+  const raise=(Vr*(1-.12)-base)*mg;
+  // shift: move a third of Vrbo volume to Airbnb (3% host fee assumed), assume half of it actually rebooks
+  const shifted=V/3, keep=V-shifted;
+  const shift=((keep*(1-.12)+shifted*.5*(1-.03))-base)*mg;
+  const sc=[["Do nothing",nothing,"Vrbo bookings stay the same and the higher commission comes out of your payout."],
+            ["Raise Vrbo rates only",raise,`Vrbo nightly rates go up ${S.r}%, with ${S.l}% fewer Vrbo bookings assumed.`],
+            ["Shift volume to Airbnb",shift,"Close a third of Vrbo dates, assuming half of those nights rebook on Airbnb."]];
+  const best=sc.reduce((a,b)=>b[1]>a[1]?b:a); const bestLab=best[1]<0?"Smallest hit":"Best of three";
+  $("#scen").innerHTML=sc.map(([t,v,p])=>`<div class="sc ${t===best[0]?"best":""}"><h3>${t}${t===best[0]?' <span class="pill p-adjusted" style="margin-left:6px">'+bestLab+'</span>':""}</h3><span class="big num ${v>=0?"up":"down"}">${v>=0?"+":"−"}${fmt(Math.abs(v))}</span><p>${p}</p></div>`).join("");
+}
+
+function setProp(id){P=PROPS.find(p=>p.id===id);kpis();chart();feed();cal();payouts();renderLog();simInit();}
+$("#prop").innerHTML=PROPS.map(p=>`<option value="${p.id}">${p.name}</option>`).join("");
+$("#prop").addEventListener("change",e=>setProp(e.target.value));
+
+function show(v){
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));
+  document.querySelectorAll("main .view").forEach(s=>s.hidden=s.id!=="v-"+v);}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>show(b.dataset.v)));
+document.addEventListener("click",e=>{
+  const g=e.target.closest("[data-goto]"); if(g) show(g.dataset.goto);
+  const f=e.target.closest("[data-f]"); if(f){filter=f.dataset.f;document.querySelectorAll("[data-f]").forEach(c=>c.setAttribute("aria-pressed",c===f));renderLog()}
+  const ok=e.target.closest("[data-ok]"); if(ok){approvals[ok.dataset.ok]="ok";renderLog();feed()}
+  const no=e.target.closest("[data-no]"); if(no){approvals[no.dataset.no]="no";renderLog();feed()}
+});
+["g","s","old","r","l","m"].forEach(k=>$("#"+k).addEventListener("input",sim));
+
+const SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+const MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>';
+function applyTheme(t){
+  document.documentElement.setAttribute("data-theme",t);
+  const b=$("#themeBtn"); const dark=t==="dark";
+  b.innerHTML=dark?SUN:MOON; b.setAttribute("aria-label",dark?"Switch to light mode":"Switch to dark mode"); b.title=b.getAttribute("aria-label");
+  try{localStorage.setItem("op-theme",t)}catch(e){}
+}
+let th="light"; try{th=localStorage.getItem("op-theme")||"light"}catch(e){}
+applyTheme(th);
+$("#themeBtn").addEventListener("click",()=>{applyTheme(document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark");chart();});
+
+setProp("cabin");
+const hashTab=location.hash.slice(1);
+show(["overview","pricing","payouts","vrbo","notes"].includes(hashTab)?hashTab:"overview");
+</script>
+</body>
+</html>
